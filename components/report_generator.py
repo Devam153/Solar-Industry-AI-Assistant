@@ -1,15 +1,6 @@
-
-"""
-Report Generator for Solar Analysis
-Creates detailed reports and visualizations
-"""
-
+""" Report Generator for Solar Analysis Creates detailed reports and visualizations """
 import json
 from datetime import datetime
-import matplotlib.pyplot as plt
-import io
-import base64
-
 class SolarReportGenerator:
     def __init__(self):
         self.report_data = {}

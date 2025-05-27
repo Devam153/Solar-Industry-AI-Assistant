@@ -17,7 +17,6 @@ A comprehensive AI-powered solar potential analysis application that evaluates r
 - **Image Processing**: OpenCV, PIL
 - **AI Analysis**: Computer Vision algorithms
 - **APIs**: Google Maps Static API, Google Geocoding API
-- **Data Visualization**: Matplotlib
 
 ## Setup
 
@@ -132,7 +131,3 @@ The application uses Indian market standards:
 - Financial analysis with Indian currency formatting
 - Detailed recommendations
 - Downloadable reports
-
-## License
-
-This project is for educational and commercial use in the solar industry.
