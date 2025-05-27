@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import io
+from utils.config import config
 
 class RoofAnalyzer:
     def __init__(self):
@@ -55,40 +56,40 @@ class RoofAnalyzer:
     def _perform_roof_analysis(self, cv_image):
         """
         Perform actual roof analysis using computer vision
-        Note: This is a simplified placeholder implementation
+        Note: This is a simplified placeholder implementation for single Indian residential building
         """
         height, width = cv_image.shape[:2]
         
-        # Placeholder analysis - replace with actual ML model
-        # In production, this would use trained models for roof detection
+        # More realistic roof area for a SINGLE Indian residential building at zoom level 21
+        # Typical Indian homes: 600-1500 sq ft built-up area
+        estimated_building_area_sqft = np.random.uniform(600, 1200)  # Single building roof area
+        suitable_area = estimated_building_area_sqft * np.random.uniform(0.65, 0.75)  # 65-75% suitable
         
-        # Simulate roof detection
-        estimated_roof_area = width * height * 0.3  # Assume 30% of image is roof
-        suitable_area = estimated_roof_area * 0.8    # 80% suitable for panels
-        
-        # Mock obstacles detection
+        # Common obstacles in Indian homes (scaled for single building)
         obstacles = [
-            {'type': 'chimney', 'area': 50, 'position': (width//2, height//3)},
-            {'type': 'vent', 'area': 20, 'position': (width//3, height//2)}
+            {'type': 'water_tank', 'area': 80, 'position': (width//2, height//3)},
+            {'type': 'staircase', 'area': 60, 'position': (width//3, height//2)},
+            {'type': 'satellite_dish', 'area': 12, 'position': (width//4, height//4)},
+            {'type': 'ac_unit', 'area': 20, 'position': (width//5, height//5)}
         ]
         
         return {
             'roof_detected': True,
-            'total_area': estimated_roof_area,
+            'total_area': estimated_building_area_sqft,
             'suitable_area': suitable_area,
             'obstacles': obstacles,
-            'roof_angle': 25,  # Degrees
-            'solar_potential': 85,  # Percentage
-            'confidence': 0.85
+            'roof_angle': np.random.randint(5, 25),  # Flatter roofs common in India
+            'solar_potential': np.random.randint(75, 85),  # Good potential for most of India
+            'confidence': np.random.uniform(0.80, 0.90)
         }
     
-    def estimate_panel_count(self, suitable_area, panel_size=17.6):
+    def estimate_panel_count(self, suitable_area, panel_size=16):
         """
-        Estimate number of solar panels that can fit
+        Estimate number of solar panels that can fit (Indian conditions)
         
         Args:
             suitable_area (float): Area suitable for panels in sq ft
-            panel_size (float): Size of individual panel in sq ft
+            panel_size (float): Size of individual panel in sq ft (Indian standard)
             
         Returns:
             int: Estimated number of panels
@@ -96,19 +97,22 @@ class RoofAnalyzer:
         if suitable_area <= 0:
             return 0
         
-        # Account for spacing between panels
-        usable_area = suitable_area * 0.85
-        return int(usable_area / panel_size)
+        # Account for spacing between panels and installation constraints
+        usable_area = suitable_area * 0.75  # 75% utilization factor
+        panel_count = int(usable_area / panel_size)
+        
+        # Cap at reasonable Indian residential limits for single building (5-20 panels)
+        return min(panel_count, 20)
 
 def analyze_roof_for_solar(image_data):
     """
-    Main function to analyze roof for solar potential
+    Main function to analyze roof for solar potential in Indian context
     
     Args:
         image_data (bytes): Satellite image data
         
     Returns:
-        dict: Complete analysis results
+        dict: Complete analysis results with Indian standards
     """
     analyzer = RoofAnalyzer()
     
@@ -120,12 +124,15 @@ def analyze_roof_for_solar(image_data):
         panel_count = analyzer.estimate_panel_count(analysis['suitable_area'])
         analysis['estimated_panels'] = panel_count
         
-        # Add recommendation
-        if analysis['solar_potential'] >= 70:
-            analysis['recommendation'] = "Excellent solar potential"
-        elif analysis['solar_potential'] >= 50:
-            analysis['recommendation'] = "Good solar potential"
+        # Add recommendation based on Indian market conditions
+        solar_potential = analysis['solar_potential']
+        if solar_potential >= 80:
+            analysis['recommendation'] = "Excellent solar potential - highly recommended for installation with government subsidies available"
+        elif solar_potential >= 65:
+            analysis['recommendation'] = "Good solar potential - installation recommended, check for state subsidies"
+        elif solar_potential >= 50:
+            analysis['recommendation'] = "Moderate solar potential - feasible with proper planning and net metering"
         else:
-            analysis['recommendation'] = "Limited solar potential"
+            analysis['recommendation'] = "Limited solar potential - consider rooftop optimization or community solar"
     
     return analysis
