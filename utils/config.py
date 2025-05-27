@@ -16,41 +16,43 @@ class SolarConfig:
     GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
     
     # Image Settings
-    DEFAULT_ZOOM_LEVEL = 20
+    DEFAULT_ZOOM_LEVEL = 21  # Much higher zoom for single building focus
     DEFAULT_IMAGE_SIZE = "640x640"
     MAX_IMAGE_SIZE = "640x640"  # Free tier limit
     IMAGE_FORMAT = "png"
     
-    # Solar Panel Specifications
-    STANDARD_PANEL_WATTAGE = 400  # Watts
-    STANDARD_PANEL_SIZE_SQFT = 17.6  # Square feet
-    PANEL_EFFICIENCY = 0.22  # 22% efficiency
+    # Solar Panel Specifications (Indian standards)
+    STANDARD_PANEL_WATTAGE = 330  # Watts (common in India)
+    STANDARD_PANEL_SIZE_SQFT = 16  # Square feet (smaller for Indian panels)
+    PANEL_EFFICIENCY = 0.20  # 20% efficiency
     
-    # System Performance
-    SYSTEM_EFFICIENCY = 0.85  # 85% overall system efficiency
-    INVERTER_EFFICIENCY = 0.96  # 96% inverter efficiency
-    DC_AC_RATIO = 1.2  # DC to AC ratio
+    # System Performance (Indian conditions)
+    SYSTEM_EFFICIENCY = 0.80  # 80% overall system efficiency (dust/heat factor)
+    INVERTER_EFFICIENCY = 0.95  # 95% inverter efficiency
+    DC_AC_RATIO = 1.15  # DC to AC ratio
     
-    # Financial Defaults
-    DEFAULT_ELECTRICITY_RATE = 0.12  # $/kWh
-    COST_PER_WATT_INSTALLED = 3.50  # $/W
-    FEDERAL_TAX_CREDIT = 0.30  # 30%
+    # Financial Defaults (Indian market in INR)
+    DEFAULT_ELECTRICITY_RATE = 6.50  # ₹/kWh (Indian residential rate)
+    COST_PER_WATT_INSTALLED = 45  # ₹/W (Indian market rate)
+    CENTRAL_SUBSIDY = 0.40  # 40% central + state subsidies
     ANNUAL_DEGRADATION = 0.005  # 0.5% per year
     SYSTEM_LIFETIME = 25  # Years
+    CURRENCY_SYMBOL = "₹"  # Indian Rupee symbol
+    CURRENCY_CODE = "INR"
     
-    # Regional Solar Data (simplified)
+    # Regional Solar Data (India specific)
     SOLAR_IRRADIANCE_BY_REGION = {
-        'southwest': 6.5,  # kWh/m²/day
-        'southeast': 5.8,
-        'west': 5.5,
-        'midwest': 4.8,
-        'northeast': 4.2,
-        'northwest': 4.0
+        'south_india': 5.5,  # kWh/m²/day (Karnataka, Tamil Nadu, Kerala)
+        'west_india': 5.8,   # Gujarat, Rajasthan, Maharashtra
+        'north_india': 4.8,  # Delhi, UP, Haryana
+        'central_india': 5.3, # MP, Telangana
+        'east_india': 4.5,   # West Bengal, Odisha
+        'northeast_india': 4.0  # Assam, other NE states
     }
     
-    # Analysis Thresholds
-    MIN_ROOF_AREA_SQFT = 100  # Minimum roof area for solar
-    MIN_PANELS_RECOMMENDED = 6  # Minimum panels for viable system
+    # Analysis Thresholds (Indian residential)
+    MIN_ROOF_AREA_SQFT = 200  # Minimum roof area for solar
+    MIN_PANELS_RECOMMENDED = 3  # Minimum panels for viable system
     EXCELLENT_SOLAR_THRESHOLD = 80  # % for excellent rating
     GOOD_SOLAR_THRESHOLD = 60  # % for good rating
     
@@ -74,34 +76,45 @@ class SolarConfig:
     
     @classmethod
     def get_regional_sun_hours(cls, latitude):
-        """Get estimated daily sun hours based on latitude"""
+        """Get estimated daily sun hours based on Indian latitude"""
         lat_abs = abs(latitude)
         
-        if lat_abs <= 25:
-            return 6.5  # Tropical
-        elif lat_abs <= 35:
-            return 5.8  # Subtropical
-        elif lat_abs <= 45:
-            return 5.2  # Temperate
-        elif lat_abs <= 55:
-            return 4.5  # Cool temperate
+        # Indian solar zones
+        if lat_abs <= 15:
+            return 5.5  # South India (Karnataka, Tamil Nadu, Kerala)
+        elif lat_abs <= 20:
+            return 5.3  # Central India (Maharashtra, Telangana)
+        elif lat_abs <= 25:
+            return 5.1  # North-Central (MP, Gujarat, Rajasthan)
+        elif lat_abs <= 30:
+            return 4.8  # North India (Delhi, UP, Haryana)
         else:
-            return 3.8  # Subarctic
+            return 4.5  # Far North (Himachal, J&K)
     
     @classmethod
     def get_electricity_rates_by_state(cls):
-        """Average electricity rates by state (simplified)"""
+        """Average electricity rates by Indian states in ₹/kWh"""
         return {
-            'CA': 0.21, 'NY': 0.18, 'MA': 0.22, 'CT': 0.21, 'RI': 0.20,
-            'TX': 0.12, 'FL': 0.11, 'GA': 0.11, 'NC': 0.11, 'SC': 0.12,
-            'AZ': 0.13, 'NV': 0.12, 'CO': 0.12, 'UT': 0.10, 'NM': 0.12,
-            'WA': 0.09, 'OR': 0.11, 'ID': 0.10, 'MT': 0.11, 'WY': 0.11
+            'MH': 7.2, 'GJ': 5.8, 'RJ': 6.1, 'KA': 6.8, 'TN': 5.5,
+            'AP': 6.2, 'TS': 6.5, 'UP': 5.9, 'DL': 7.5, 'HR': 6.3,
+            'PB': 6.1, 'WB': 6.8, 'OR': 5.2, 'JH': 5.4, 'MP': 6.0,
+            'KL': 5.8, 'AS': 5.1, 'BR': 4.9, 'HP': 4.8, 'UK': 5.2
         }
+    
+    @classmethod
+    def format_currency(cls, amount):
+        """Format amount in Indian currency"""
+        if amount >= 10000000:  # 1 crore or more
+            return f"₹{amount/10000000:.1f} Cr"
+        elif amount >= 100000:  # 1 lakh or more
+            return f"₹{amount/100000:.1f} L"
+        else:
+            return f"₹{amount:,.0f}"
 
 # Global configuration instance
 config = SolarConfig()
 
-# Helper functions
+
 def get_config_summary():
     """Get a summary of current configuration"""
     return {
