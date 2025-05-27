@@ -2,8 +2,6 @@
 import requests
 import os
 from dotenv import load_dotenv
-
-# Load environment variables
 load_dotenv()
 
 def test_google_maps_api():
@@ -18,7 +16,6 @@ def test_google_maps_api():
     print(f"🔑 Testing API Key: {api_key[:10]}...")
     print("-" * 50)
     
-    # Test 1: Geocoding API
     print("🌍 Testing Geocoding API...")
     test_address = "1600 Amphitheatre Parkway, Mountain View, CA"
     geocoding_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={test_address}&key={api_key}"
@@ -43,7 +40,6 @@ def test_google_maps_api():
     
     print("-" * 50)
     
-    # Test 2: Static Maps API (Satellite Image)
     print("🛰️ Testing Static Maps API...")
     static_map_url = f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lng}&zoom=20&size=640x640&maptype=satellite&key={api_key}"
     
@@ -70,3 +66,15 @@ if __name__ == "__main__":
     print("🧪 Testing Google Maps API Configuration")
     print("=" * 50)
     test_google_maps_api()
+
+
+'''The error you see in the browser (The Google Maps Platform server rejected your request. 
+The provided API key is invalid) is NORMAL and EXPECTED when you click the URL directly in a browser. 
+Here's why:
+
+Why the browser shows an error:
+Your API key has HTTP referrer restrictions
+When you click the URL directly, the browser doesn't send the correct referrer
+Google Maps rejects the request for security reasons
+This is actually GOOD security!
+'''
