@@ -8,14 +8,14 @@ import base64
 # Load environment variables
 load_dotenv()
 
-def fetch_satellite_image(lat, lng, zoom=20, size="640x640", image_format="png"):
+def fetch_satellite_image(lat, lng, zoom=21, size="640x640", image_format="png"):
     """
     Fetch high-resolution satellite image using Google Maps Static API
     
     Args:
         lat (float): Latitude
         lng (float): Longitude
-        zoom (int): Zoom level (1-21, higher = more detailed)
+        zoom (int): Zoom level (1-21, higher = more detailed) - Default 21 for single building
         size (str): Image size in format "widthxheight" (max 640x640 for free tier)
         image_format (str): Image format (png, jpg, gif)
         
@@ -44,7 +44,7 @@ def fetch_satellite_image(lat, lng, zoom=20, size="640x640", image_format="png")
     }
     
     try:
-        print(f"🛰️ Fetching satellite image for coordinates: {lat}, {lng}")
+        print(f"🛰️ Fetching satellite image for coordinates: {lat}, {lng} at zoom {zoom}")
         response = requests.get(base_url, params=params)
         
         if response.status_code == 200:
@@ -108,7 +108,7 @@ def fetch_satellite_image_complete(address=None, lat=None, lng=None):
     Returns:
         dict: Complete result with coordinates, image data, and image info
     """
-    from geocoding import get_coordinates_from_address
+    from .geocoding import get_coordinates_from_address
     
     # Get coordinates if not provided
     if lat is None or lng is None:
@@ -203,6 +203,3 @@ def test_in_memory_fetch():
 
 if __name__ == "__main__":
     test_in_memory_fetch()
-
-
-"WONT WORK IN PRODUCTION"
