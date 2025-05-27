@@ -1,5 +1,7 @@
 # Solar Analysis Tool
 
+access the website: https://solar-analysis-ai-assistant.streamlit.app
+
 A comprehensive AI-powered solar potential analysis application that evaluates rooftop solar installation feasibility using satellite imagery and advanced calculations.
 
 ## Features
