@@ -5,3 +5,4 @@ google-generativeai
 opencv-python-headless
 Pillow
 numpy
+matplotlib
