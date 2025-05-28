@@ -128,7 +128,7 @@ def main():
     st.markdown("""
     <div class="main-header">
         <h1>Solar Analysis</h1>
-        <p>AI-powered solar potential analysis for your property</p>
+        <p>AI-powered solar potential analysis for your house</p>
     </div>
     """, unsafe_allow_html=True)
     
