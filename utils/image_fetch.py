@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 import io
 from PIL import Image
+import base64
 
 # Load environment variables
 load_dotenv()
@@ -94,7 +95,7 @@ def get_image_info(image_data):
     except Exception as e:
         return {"error": f"Failed to analyze image: {str(e)}"}
 
-def fetch_satellite_image_complete(address=None, lat=None, lng=None):
+def fetch_satellite_image_complete(address=None, lat=None, lng=None, zoom=21):
     """
     Complete workflow: geocode address (if needed) and fetch satellite image
     Returns image data in memory without saving to disk
@@ -103,6 +104,7 @@ def fetch_satellite_image_complete(address=None, lat=None, lng=None):
         address (str): Address to geocode (optional if lat/lng provided)
         lat (float): Latitude (optional if address provided)
         lng (float): Longitude (optional if address provided)
+        zoom (int): Zoom level for the satellite image
         
     Returns:
         dict: Complete result with coordinates, image data, and image info
@@ -126,8 +128,8 @@ def fetch_satellite_image_complete(address=None, lat=None, lng=None):
     else:
         formatted_address = f"{lat}, {lng}"
     
-    # Fetch satellite image
-    image_result = fetch_satellite_image(lat, lng)
+    # Fetch satellite image with the specified zoom level
+    image_result = fetch_satellite_image(lat, lng, zoom=zoom)
     
     if 'error' in image_result:
         return {"error": f"Image fetch failed: {image_result['error']}"}

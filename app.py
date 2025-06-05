@@ -6,6 +6,7 @@ from utils.geocoding import get_coordinates_from_address
 from components.ai_analyzer import analyze_roof_for_solar
 from components.solar_calculator import calculate_solar_potential
 from components.report_generator import generate_solar_report, SolarReportGenerator
+from components.roof_visualizer import create_roof_visualization
 from utils.config import config, validate_environment
 import time
 import json
@@ -128,7 +129,7 @@ def main():
     st.markdown("""
     <div class="main-header">
         <h1>Solar Analysis</h1>
-        <p>AI-powered solar potential analysis for your house</p>
+        <p>AI-powered solar potential analysis for your property</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -146,13 +147,12 @@ def main():
         
         with col1:
             st.markdown('<div class="section-title">Location</div>', unsafe_allow_html=True)
-            input_method = st.radio("", ["Address", "Coordinates"], horizontal=True, label_visibility="collapsed")
+            input_method = st.radio("Input Method", ["Address", "Coordinates"], horizontal=True)
             
             if input_method == "Address":
                 address = st.text_input(
-                    "",
-                    placeholder="Enter your address (e.g., 123 Main St, City, State)",
-                    label_visibility="collapsed"
+                    "Enter Address",
+                    placeholder="Enter your address (e.g., 123 Main St, City, State)"
                 )
                 coords_lat = coords_lng = None
             else:
@@ -165,7 +165,7 @@ def main():
         
         with col2:
             st.markdown('<div class="section-title">Settings</div>', unsafe_allow_html=True)
-            zoom_level = st.slider("Image Zoom", 15, 21, 21)
+            zoom_level = st.slider("Image Zoom Level", 15, 21, 21)
         
         analyze_button = st.button("🚀 Analyze Solar Potential", type="primary")
         
@@ -174,11 +174,11 @@ def main():
     # Process analysis
     if analyze_button:
         with st.spinner("Analyzing your property..."):
-            # Fetch satellite image
+            # Fetch satellite image with the correct zoom level
             if input_method == "Address" and address:
-                result = fetch_satellite_image_complete(address=address)
+                result = fetch_satellite_image_complete(address=address, zoom=zoom_level)
             elif input_method == "Coordinates" and coords_lat is not None and coords_lng is not None:
-                result = fetch_satellite_image_complete(lat=coords_lat, lng=coords_lng)
+                result = fetch_satellite_image_complete(lat=coords_lat, lng=coords_lng, zoom=zoom_level)
             else:
                 st.error("Please provide location information")
                 return
@@ -188,9 +188,6 @@ def main():
                 return
             
             # AI Analysis
-            progress = st.progress(0.3)
-            st.text("Analyzing roof structure...")
-            
             ai_analysis = analyze_roof_for_solar(result['image_data'])
             
             if not ai_analysis.get('success', False):
@@ -198,20 +195,13 @@ def main():
                 return
             
             # Solar calculations
-            progress.progress(0.7)
-            st.text("Calculating solar potential...")
-            
             panel_count = ai_analysis.get('estimated_panels', 0)
             solar_calculations = calculate_solar_potential(panel_count, result['coordinates']['lat'])
             
             # Generate report
-            progress.progress(0.9)
             report = generate_solar_report(result, ai_analysis, solar_calculations)
             
-            progress.progress(1.0)
             st.success("Analysis complete!")
-            time.sleep(0.5)
-            progress.empty()
             
             # Store in session state
             st.session_state.update({
@@ -265,13 +255,14 @@ def main():
             
             with col_d:
                 st.metric("Annual Energy", f"{solar_calculations['annual_kwh']:,.0f} kWh")
-                # Use formatted system cost
                 st.metric("System Cost", solar_calculations.get('system_cost_formatted', f"₹{solar_calculations['system_cost']:,.0f}"))
             
             with col_e:
                 st.metric("Monthly Average", f"{solar_calculations['monthly_kwh']:,.0f} kWh")
-                # Use formatted annual savings
                 st.metric("Annual Savings", solar_calculations.get('annual_savings_formatted', f"₹{solar_calculations['annual_savings']:,.0f}"))
+        
+        # Add Roof Visualization
+        create_roof_visualization(result['image_data'], ai_analysis)
         
         # Solar Potential
         st.markdown('<div class="section-title">Solar Potential</div>', unsafe_allow_html=True)
@@ -290,10 +281,6 @@ def main():
         with col_bar:
             st.progress(solar_potential / 100)
         
-        # Recommendations
-        st.markdown('<div class="section-title">Recommendations</div>', unsafe_allow_html=True)
-        recommendation = ai_analysis.get('recommendation', 'Analysis complete')
-        st.write(recommendation)
         
         # Detailed Analysis - Fixed to show consistent values
         with st.expander("📊 Detailed Analysis"):

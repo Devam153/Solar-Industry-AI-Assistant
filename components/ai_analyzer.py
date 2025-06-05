@@ -1,13 +1,19 @@
 """
-AI Analyzer for Solar Roof Analysis
-Handles roof detection and solar panel placement analysis
+AI Analyzer for Solar Roof Analysis using Google Gemini
+Handles roof detection and solar panel placement analysis with LLM
 """
 
 import cv2
 import numpy as np
 from PIL import Image
 import io
+import base64
+import google.generativeai as genai
+import json
 from utils.config import config
+
+# Configure Gemini API
+genai.configure(api_key=config.GEMINI_API_KEY)
 
 class RoofAnalyzer:
     def __init__(self):
@@ -15,10 +21,11 @@ class RoofAnalyzer:
         self.roof_area = 0
         self.suitable_area = 0
         self.obstacles = []
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
     
     def analyze_satellite_image(self, image_data):
         """
-        Analyze satellite image for roof detection and solar suitability
+        Analyze satellite image for roof detection and solar suitability using Gemini AI
         
         Args:
             image_data (bytes): Raw image data from satellite
@@ -30,11 +37,8 @@ class RoofAnalyzer:
             # Convert bytes to PIL Image
             image = Image.open(io.BytesIO(image_data))
             
-            # Convert to OpenCV format for analysis
-            cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-            
-            # Placeholder analysis - in production, this would use ML models
-            analysis_results = self._perform_roof_analysis(cv_image)
+            # Use Gemini for AI-powered roof analysis
+            analysis_results = self._perform_gemini_roof_analysis(image)
             
             return {
                 'success': True,
@@ -50,38 +54,90 @@ class RoofAnalyzer:
         except Exception as e:
             return {
                 'success': False,
-                'error': f"Analysis failed: {str(e)}"
+                'error': f"Gemini AI analysis failed: {str(e)}"
             }
     
-    def _perform_roof_analysis(self, cv_image):
+    def _perform_gemini_roof_analysis(self, image):
         """
-        Perform actual roof analysis using computer vision
-        Note: This is a simplified placeholder implementation for single Indian residential building
+        Perform roof analysis using Gemini Vision AI
         """
-        height, width = cv_image.shape[:2]
+        prompt = """
+        Analyze this satellite image of an Indian residential building for solar panel installation potential. 
         
-        # More realistic roof area for a SINGLE Indian residential building at zoom level 21
-        # Typical Indian homes: 600-1500 sq ft built-up area
-        estimated_building_area_sqft = np.random.uniform(600, 1200)  # Single building roof area
-        suitable_area = estimated_building_area_sqft * np.random.uniform(0.65, 0.75)  # 65-75% suitable
+        Please examine:
+        1. Roof area and structure (flat/sloped)
+        2. Obstacles like water tanks, AC units, satellite dishes, staircase access
+        3. Suitable area for solar panels (excluding obstacles and margins)
+        4. Roof orientation and potential shading
+        5. Overall solar installation feasibility
         
-        # Common obstacles in Indian homes (scaled for single building)
-        obstacles = [
-            {'type': 'water_tank', 'area': 80, 'position': (width//2, height//3)},
-            {'type': 'staircase', 'area': 60, 'position': (width//3, height//2)},
-            {'type': 'satellite_dish', 'area': 12, 'position': (width//4, height//4)},
-            {'type': 'ac_unit', 'area': 20, 'position': (width//5, height//5)}
-        ]
+        Provide your analysis in the following JSON format:
+        {
+            "roof_detected": true/false,
+            "total_area": estimated_roof_area_in_sqft,
+            "suitable_area": usable_area_for_panels_in_sqft,
+            "obstacles": [
+                {"type": "water_tank", "area": area_in_sqft, "impact": "high/medium/low"},
+                {"type": "ac_unit", "area": area_in_sqft, "impact": "medium"},
+                {"type": "staircase", "area": area_in_sqft, "impact": "high"}
+            ],
+            "roof_angle": estimated_angle_in_degrees,
+            "solar_potential": percentage_0_to_100,
+            "confidence": confidence_score_0_to_1,
+            "analysis_notes": "detailed observations about the roof"
+        }
         
+        Focus on Indian residential building characteristics. Be realistic about area estimates for typical Indian homes (600-1500 sq ft roof area).
+        """
+        
+        try:
+            response = self.model.generate_content([prompt, image])
+            
+            # Extract JSON from response
+            response_text = response.text
+            
+            # Find JSON in the response
+            start_idx = response_text.find('{')
+            end_idx = response_text.rfind('}') + 1
+            
+            if start_idx != -1 and end_idx != 0:
+                json_str = response_text[start_idx:end_idx]
+                analysis_data = json.loads(json_str)
+                
+                # Validate and set defaults if needed
+                return {
+                    'roof_detected': analysis_data.get('roof_detected', True),
+                    'total_area': float(analysis_data.get('total_area', 800)),
+                    'suitable_area': float(analysis_data.get('suitable_area', 600)),
+                    'obstacles': analysis_data.get('obstacles', []),
+                    'roof_angle': int(analysis_data.get('roof_angle', 15)),
+                    'solar_potential': int(analysis_data.get('solar_potential', 75)),
+                    'confidence': float(analysis_data.get('confidence', 0.85)),
+                    'analysis_notes': analysis_data.get('analysis_notes', '')
+                }
+            else:
+                # Fallback if JSON parsing fails
+                return self._fallback_analysis()
+                
+        except Exception as e:
+            print(f"Gemini analysis error: {str(e)}")
+            return self._fallback_analysis()
+    '''
+    def _fallback_analysis(self):
+        """Fallback analysis if Gemini fails"""
         return {
             'roof_detected': True,
-            'total_area': estimated_building_area_sqft,
-            'suitable_area': suitable_area,
-            'obstacles': obstacles,
-            'roof_angle': np.random.randint(5, 25),  # Flatter roofs common in India
-            'solar_potential': np.random.randint(75, 85),  # Good potential for most of India
-            'confidence': np.random.uniform(0.80, 0.90)
-        }
+            'total_area': np.random.uniform(700, 1200),
+            'suitable_area': np.random.uniform(500, 900),
+            'obstacles': [
+                {'type': 'water_tank', 'area': 80, 'impact': 'high'},
+                {'type': 'ac_unit', 'area': 20, 'impact': 'medium'}
+            ],
+            'roof_angle': np.random.randint(10, 25),
+            'solar_potential': np.random.randint(70, 85),
+            'confidence': 0.75,
+            'analysis_notes': 'Fallback analysis used'
+        }'''
     
     def estimate_panel_count(self, suitable_area, panel_size=16):
         """
@@ -103,20 +159,52 @@ class RoofAnalyzer:
         
         # Cap at reasonable Indian residential limits for single building (5-20 panels)
         return min(panel_count, 20)
+    
+    def generate_ai_recommendation(self, analysis_results, panel_count):
+        """
+        Generate AI-powered recommendations using Gemini
+        """
+        try:
+            prompt = f"""
+            Based on this solar roof analysis for an Indian residential building:
+            - Roof area: {analysis_results['total_roof_area']:.0f} sq ft
+            - Suitable area: {analysis_results['suitable_area']:.0f} sq ft
+            - Solar potential: {analysis_results['solar_potential']}%
+            - Estimated panels: {panel_count}
+            - Obstacles found: {len(analysis_results['obstacles'])} items
+            
+            Provide a professional recommendation for solar installation in 2-3 sentences, 
+            considering Indian market conditions, subsidies, and payback period.
+            """
+            
+            response = self.model.generate_content(prompt)
+            return response.text.strip()
+            
+        except Exception as e:
+            # Fallback recommendation
+            solar_potential = analysis_results['solar_potential']
+            if solar_potential >= 80:
+                return "Excellent solar potential - highly recommended for installation with government subsidies available"
+            elif solar_potential >= 65:
+                return "Good solar potential - installation recommended, check for state subsidies"
+            elif solar_potential >= 50:
+                return "Moderate solar potential - feasible with proper planning and net metering"
+            else:
+                return "Limited solar potential - consider rooftop optimization or community solar"
 
 def analyze_roof_for_solar(image_data):
     """
-    Main function to analyze roof for solar potential in Indian context
+    Main function to analyze roof for solar potential using Gemini AI
     
     Args:
         image_data (bytes): Satellite image data
         
     Returns:
-        dict: Complete analysis results with Indian standards
+        dict: Complete analysis results with AI-powered insights
     """
     analyzer = RoofAnalyzer()
     
-    # Perform AI analysis
+    # Perform Gemini AI analysis
     analysis = analyzer.analyze_satellite_image(image_data)
     
     if analysis['success']:
@@ -124,15 +212,7 @@ def analyze_roof_for_solar(image_data):
         panel_count = analyzer.estimate_panel_count(analysis['suitable_area'])
         analysis['estimated_panels'] = panel_count
         
-        # Add recommendation based on Indian market conditions
-        solar_potential = analysis['solar_potential']
-        if solar_potential >= 80:
-            analysis['recommendation'] = "Excellent solar potential - highly recommended for installation with government subsidies available"
-        elif solar_potential >= 65:
-            analysis['recommendation'] = "Good solar potential - installation recommended, check for state subsidies"
-        elif solar_potential >= 50:
-            analysis['recommendation'] = "Moderate solar potential - feasible with proper planning and net metering"
-        else:
-            analysis['recommendation'] = "Limited solar potential - consider rooftop optimization or community solar"
+        # Add AI-generated recommendation
+        analysis['recommendation'] = analyzer.generate_ai_recommendation(analysis, panel_count)
     
     return analysis
