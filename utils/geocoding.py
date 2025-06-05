@@ -87,24 +87,24 @@ def test_geocoding():
     ]
     
     for address in test_addresses:
-        print(f"\n📍 Testing address: {address}")
+        print(f"Testing address: {address}")
         result = get_coordinates_from_address(address)
         
         if 'error' in result:
-            print(f"❌ Error: {result['error']}")
+            print(f"Error: {result['error']}")
         else:
-            print(f"✅ Success!")
-            print(f"   Coordinates: {result['lat']}, {result['lng']}")
-            print(f"   Formatted: {result['formatted_address']}")
+            print(f"Success!")
+            print(f"Coordinates: {result['lat']}, {result['lng']}")
+            print(f"Formatted: {result['formatted_address']}")
             
             # Validate coordinates
             if validate_coordinates(result['lat'], result['lng']):
-                print(f"✅ Coordinates are valid")
+                print(f"Coordinates are valid")
             else:
-                print(f"❌ Invalid coordinates")
+                print(f"Invalid coordinates")
     
     print("\n" + "=" * 50)
-    print("🎉 Geocoding tests completed!")
+    print("Geocoding tests completed!")
 
 if __name__ == "__main__":
     test_geocoding()

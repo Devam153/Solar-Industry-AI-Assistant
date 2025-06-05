@@ -14,6 +14,7 @@ class SolarConfig:
     
     # API Configuration
     GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     
     # Image Settings
     DEFAULT_ZOOM_LEVEL = 21  # Much higher zoom for single building focus
@@ -69,6 +70,9 @@ class SolarConfig:
         if not cls.GOOGLE_MAPS_API_KEY:
             issues.append("GOOGLE_MAPS_API_KEY is not set")
         
+        if not cls.GEMINI_API_KEY:
+            issues.append("GEMINI_API_KEY is not set")
+        
         return {
             'valid': len(issues) == 0,
             'issues': issues
@@ -119,10 +123,11 @@ def get_config_summary():
     """Get a summary of current configuration"""
     return {
         'api_configured': bool(config.GOOGLE_MAPS_API_KEY),
+        'gemini_configured': bool(config.GEMINI_API_KEY),
         'default_zoom': config.DEFAULT_ZOOM_LEVEL,
         'panel_wattage': config.STANDARD_PANEL_WATTAGE,
         'system_efficiency': config.SYSTEM_EFFICIENCY,
-        'tax_credit': config.FEDERAL_TAX_CREDIT * 100,
+        'central_subsidy': config.CENTRAL_SUBSIDY * 100,
         'system_lifetime': config.SYSTEM_LIFETIME
     }
 

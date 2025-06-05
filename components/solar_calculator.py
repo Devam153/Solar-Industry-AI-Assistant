@@ -1,215 +1,171 @@
 """
-Solar Calculator for Energy and Financial Analysis
-Calculates solar potential, energy generation, and cost savings
+Solar Calculator with Gemini AI optimization for Indian market
+Enhanced calculations with AI-powered regional optimization
 """
 
+import google.generativeai as genai
+import json
 from utils.config import config
+
+# Configure Gemini API
+genai.configure(api_key=config.GEMINI_API_KEY)
 
 class SolarCalculator:
     def __init__(self):
-        # Indian residential solar specifications
-        self.panel_wattage = 330  # Watts per panel (common in India)
-        self.system_efficiency = 0.80  # Overall system efficiency (slightly lower due to dust/heat)
-        self.avg_sun_hours = 5.0  # Average daily sun hours in India
-        self.electricity_rate = 6.50  # ₹/kWh (average residential rate in India)
-        self.cost_per_watt = 45  # ₹/W system cost (realistic for India)
-        self.subsidies = 0.40  # 40% central + state subsidies (up to certain capacity)
-        self.annual_degradation = 0.005  # 0.5% annual panel degradation
-        self.max_subsidy_capacity = 3  # kW (typical subsidy limit for residential)
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
     
-    def calculate_system_size(self, panel_count):
-        """Calculate total system size in kW"""
-        return (panel_count * self.panel_wattage) / 1000
+    def calculate_solar_potential(self, panel_count, latitude, location_data=None):
+        """
+        Calculate solar potential with AI optimization for Indian conditions
+        """
+        try:
+            # Get AI-optimized parameters
+            ai_params = self._get_ai_optimized_parameters(latitude, panel_count, location_data)
+            
+            # Base calculations
+            system_size_kw = panel_count * config.STANDARD_PANEL_WATTAGE / 1000
+            
+            # Use AI-optimized sun hours and efficiency
+            daily_sun_hours = ai_params.get('daily_sun_hours', config.get_regional_sun_hours(latitude))
+            system_efficiency = ai_params.get('system_efficiency', config.SYSTEM_EFFICIENCY)
+            
+            # Energy calculations
+            daily_kwh = system_size_kw * daily_sun_hours * system_efficiency
+            annual_kwh = daily_kwh * 365
+            monthly_kwh = annual_kwh / 12
+            
+            # Financial calculations with AI optimization
+            electricity_rate = ai_params.get('electricity_rate', config.DEFAULT_ELECTRICITY_RATE)
+            cost_per_watt = ai_params.get('cost_per_watt', config.COST_PER_WATT_INSTALLED)
+            
+            system_cost = system_size_kw * 1000 * cost_per_watt
+            
+            # Apply subsidies (AI can suggest state-specific rates)
+            subsidy_rate = ai_params.get('subsidy_rate', config.CENTRAL_SUBSIDY)
+            if system_size_kw <= 3:
+                final_cost = system_cost * (1 - subsidy_rate)
+            else:
+                subsidized_portion = 3 * 1000 * cost_per_watt * subsidy_rate
+                remaining_cost = (system_size_kw - 3) * 1000 * cost_per_watt * 0.8  # 20% subsidy above 3kW
+                final_cost = system_cost - subsidized_portion - ((system_size_kw - 3) * 1000 * cost_per_watt * 0.2)
+            
+            # Savings and payback
+            annual_savings = annual_kwh * electricity_rate
+            payback_years = final_cost / annual_savings if annual_savings > 0 else 0
+            
+            # 25-year calculations
+            total_25_year_savings = annual_savings * 25
+            roi_percentage = ((total_25_year_savings - final_cost) / final_cost) * 100 if final_cost > 0 else 0
+            
+            return {
+                'system_size_kw': system_size_kw,
+                'daily_kwh': daily_kwh,
+                'monthly_kwh': monthly_kwh,
+                'annual_kwh': annual_kwh,
+                'system_cost': final_cost,
+                'system_cost_formatted': config.format_currency(final_cost),
+                'annual_savings': annual_savings,
+                'annual_savings_formatted': config.format_currency(annual_savings),
+                'payback_years': payback_years,
+                'roi_percentage': roi_percentage,
+                'ai_optimized': True,
+                'optimization_notes': ai_params.get('notes', '')
+            }
+            
+        except Exception as e:
+            # Fallback to basic calculation
+            return self._basic_calculation(panel_count, latitude)
     
-    def calculate_annual_generation(self, system_size_kw, location_lat=None):
+    def _get_ai_optimized_parameters(self, latitude, panel_count, location_data):
         """
-        Calculate annual energy generation in kWh
-        
-        Args:
-            system_size_kw (float): System size in kilowatts
-            location_lat (float): Latitude for sun hours adjustment
+        Get AI-optimized parameters for the specific location
+        """
+        try:
+            prompt = f"""
+            Optimize solar calculation parameters for this Indian location:
+            - Latitude: {latitude}
+            - Panel count: {panel_count}
+            - System size: {panel_count * 0.33:.1f} kW
             
-        Returns:
-            float: Annual kWh generation
-        """
-        # Adjust sun hours based on Indian regions if latitude provided
-        sun_hours = self.avg_sun_hours
-        if location_lat:
-            sun_hours = self._adjust_sun_hours_for_india(location_lat)
+            Consider:
+            1. Regional solar irradiance patterns in India
+            2. Local weather conditions and dust factors
+            3. State-specific electricity rates and subsidies
+            4. Seasonal variations and monsoon impact
+            
+            Provide optimized parameters in JSON format:
+            {{
+                "daily_sun_hours": optimized_hours_considering_weather,
+                "system_efficiency": efficiency_with_dust_heat_factors,
+                "electricity_rate": state_specific_rate_inr_per_kwh,
+                "cost_per_watt": regional_installation_cost_inr,
+                "subsidy_rate": applicable_subsidy_percentage,
+                "notes": "brief explanation of optimizations"
+            }}
+            
+            Be realistic for Indian conditions - account for dust, heat, monsoon, and regional variations.
+            """
+            
+            response = self.model.generate_content(prompt)
+            response_text = response.text
+            
+            # Extract JSON
+            start_idx = response_text.find('{')
+            end_idx = response_text.rfind('}') + 1
+            
+            if start_idx != -1 and end_idx != 0:
+                json_str = response_text[start_idx:end_idx]
+                return json.loads(json_str)
+            
+        except Exception as e:
+            print(f"AI optimization failed: {str(e)}")
         
-        # Account for Indian conditions (dust, heat, monsoon)
-        daily_generation = system_size_kw * sun_hours * self.system_efficiency
-        annual_generation = daily_generation * 365
-        
-        return annual_generation
+        # Return defaults if AI fails
+        return {
+            'daily_sun_hours': config.get_regional_sun_hours(latitude),
+            'system_efficiency': config.SYSTEM_EFFICIENCY,
+            'electricity_rate': config.DEFAULT_ELECTRICITY_RATE,
+            'cost_per_watt': config.COST_PER_WATT_INSTALLED,
+            'subsidy_rate': config.CENTRAL_SUBSIDY,
+            'notes': 'Default parameters used'
+        }
     
-    def _adjust_sun_hours_for_india(self, latitude):
-        """Adjust sun hours based on Indian regions"""
-        return config.get_regional_sun_hours(latitude)
-    
-    def calculate_financial_metrics(self, system_size_kw, annual_generation):
-        """
-        Calculate financial metrics for solar installation in India
+    def _basic_calculation(self, panel_count, latitude):
+        """Fallback basic calculation without AI optimization"""
+        system_size_kw = panel_count * config.STANDARD_PANEL_WATTAGE / 1000
+        daily_sun_hours = config.get_regional_sun_hours(latitude)
         
-        Args:
-            system_size_kw (float): System size in kW
-            annual_generation (float): Annual kWh generation
-            
-        Returns:
-            dict: Financial analysis results in INR with Indian formatting
-        """
-        # System cost calculations in INR
-        gross_cost = system_size_kw * 1000 * self.cost_per_watt
+        daily_kwh = system_size_kw * daily_sun_hours * config.SYSTEM_EFFICIENCY
+        annual_kwh = daily_kwh * 365
+        monthly_kwh = annual_kwh / 12
         
-        # Calculate subsidy (40% up to 3kW, 20% for remaining)
-        subsidized_capacity = min(system_size_kw, self.max_subsidy_capacity)
-        remaining_capacity = max(0, system_size_kw - self.max_subsidy_capacity)
+        system_cost = system_size_kw * 1000 * config.COST_PER_WATT_INSTALLED
+        final_cost = system_cost * (1 - config.CENTRAL_SUBSIDY)
         
-        subsidy_amount = (subsidized_capacity * 1000 * self.cost_per_watt * 0.40) + \
-                        (remaining_capacity * 1000 * self.cost_per_watt * 0.20)
+        annual_savings = annual_kwh * config.DEFAULT_ELECTRICITY_RATE
+        payback_years = final_cost / annual_savings if annual_savings > 0 else 0
         
-        net_cost = gross_cost - subsidy_amount
-        
-        # Annual savings in INR
-        annual_savings = annual_generation * self.electricity_rate
-        
-        # Payback period
-        payback_years = net_cost / annual_savings if annual_savings > 0 else 0
-        
-        # 25-year lifetime value (accounting for degradation)
-        lifetime_generation = 0
-        for year in range(25):
-            year_generation = annual_generation * ((1 - self.annual_degradation) ** year)
-            lifetime_generation += year_generation
-        
-        lifetime_savings = lifetime_generation * self.electricity_rate
-        net_savings = lifetime_savings - net_cost
-        roi_percentage = (net_savings / net_cost * 100) if net_cost > 0 else 0
-        
-        # Format currency values using Indian number system - FULL NUMBERS ONLY
-        def format_indian_currency(amount):
-            """Format currency in Indian number system with proper commas - full numbers only"""
-            # Convert to integer for formatting
-            amount_int = int(amount)
-            amount_str = str(amount_int)
-            
-            # Indian number system formatting
-            if len(amount_str) <= 3:
-                return f"₹{amount_str}"
-            
-            # Start from the right and add commas
-            result = amount_str[-3:]  # Last 3 digits
-            remaining = amount_str[:-3]
-            
-            # Add commas every 2 digits from right to left (Indian system)
-            while len(remaining) > 2:
-                result = remaining[-2:] + ',' + result
-                remaining = remaining[:-2]
-            
-            # Add any remaining digits
-            if remaining:
-                result = remaining + ',' + result
-            
-            return f"₹{result}"
+        total_25_year_savings = annual_savings * 25
+        roi_percentage = ((total_25_year_savings - final_cost) / final_cost) * 100 if final_cost > 0 else 0
         
         return {
             'system_size_kw': system_size_kw,
-            'gross_cost': gross_cost,
-            'gross_cost_formatted': format_indian_currency(gross_cost),
-            'subsidy_amount': subsidy_amount,
-            'subsidy_amount_formatted': format_indian_currency(subsidy_amount),
-            'system_cost': net_cost,
-            'system_cost_formatted': format_indian_currency(net_cost),
-            'annual_kwh': annual_generation,
-            'monthly_kwh': annual_generation / 12,
+            'daily_kwh': daily_kwh,
+            'monthly_kwh': monthly_kwh,
+            'annual_kwh': annual_kwh,
+            'system_cost': final_cost,
+            'system_cost_formatted': config.format_currency(final_cost),
             'annual_savings': annual_savings,
-            'annual_savings_formatted': format_indian_currency(annual_savings),
+            'annual_savings_formatted': config.format_currency(annual_savings),
             'payback_years': payback_years,
-            'lifetime_savings': lifetime_savings,
-            'lifetime_savings_formatted': format_indian_currency(lifetime_savings),
-            'net_savings': net_savings,
-            'net_savings_formatted': format_indian_currency(net_savings),
             'roi_percentage': roi_percentage,
-            'currency': 'INR',
-            'currency_symbol': '₹'
-        }
-    
-    def calculate_complete_analysis(self, panel_count, location_lat=None):
-        """
-        Perform complete solar analysis for Indian market
-        
-        Args:
-            panel_count (int): Number of solar panels
-            location_lat (float): Latitude for location-specific calculations
-            
-        Returns:
-            dict: Complete solar analysis with Indian currency formatting
-        """
-        if panel_count <= 0:
-            return {
-                'error': 'Invalid panel count',
-                'system_size_kw': 0,
-                'annual_kwh': 0,
-                'system_cost': 0,
-                'system_cost_formatted': '₹0',
-                'annual_savings': 0,
-                'annual_savings_formatted': '₹0',
-                'payback_years': 0,
-                'currency': 'INR'
-            }
-        
-        # Cap at realistic residential limits for India (typically 3-10kW)
-        max_panels = 30  # ~10kW system
-        panel_count = min(panel_count, max_panels)
-        
-        # Calculate system size
-        system_size = self.calculate_system_size(panel_count)
-        
-        # Calculate energy generation
-        annual_generation = self.calculate_annual_generation(system_size, location_lat)
-        
-        # Calculate financial metrics
-        financial_metrics = self.calculate_financial_metrics(system_size, annual_generation)
-        
-        return financial_metrics
-    
-    def get_system_recommendations(self, roof_area, budget=None):
-        """
-        Recommend optimal system size based on roof area and budget for Indian homes
-        """
-        # Estimate max panels based on roof area (16 sq ft per panel for Indian conditions)
-        max_panels = min(int(roof_area / 16), 30)  # Cap at 30 panels (~10kW)
-        
-        # Calculate for different system sizes suitable for Indian homes
-        recommendations = []
-        
-        for size_factor in [0.3, 0.6, 1.0]:  # Smaller increments for Indian market
-            panel_count = max(1, int(max_panels * size_factor))
-            if panel_count > 0:
-                analysis = self.calculate_complete_analysis(panel_count)
-                
-                recommendations.append({
-                    'size': f"{size_factor*100:.0f}% of roof",
-                    'panel_count': panel_count,
-                    'analysis': analysis,
-                    'within_budget': budget is None or analysis['system_cost'] <= budget
-                })
-        
-        return {
-            'max_panels': max_panels,
-            'recommendations': recommendations
+            'ai_optimized': False,
+            'optimization_notes': 'Basic calculation without AI optimization'
         }
 
-def calculate_solar_potential(panel_count, location_lat=None):
+def calculate_solar_potential(panel_count, latitude, location_data=None):
     """
-    Main function to calculate solar potential for Indian market
-    
-    Args:
-        panel_count (int): Number of solar panels
-        location_lat (float): Latitude for location-specific calculations
-        
-    Returns:
-        dict: Complete solar analysis in Indian context
+    Main function to calculate solar potential with AI optimization
     """
     calculator = SolarCalculator()
-    return calculator.calculate_complete_analysis(panel_count, location_lat)
+    return calculator.calculate_solar_potential(panel_count, latitude, location_data)
