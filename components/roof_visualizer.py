@@ -247,6 +247,7 @@ class RoofVisualizer:
         ]
         
         # Fill and outline suitable area
+        draw.polygon(suitable_points, fill=(0, 255, 0, 60), outline=None)
         self._draw_dotted_outline(draw, suitable_points, (0, 255, 0, 255), width=2)
         
         # Add text labels
@@ -289,7 +290,7 @@ class RoofVisualizer:
             st.markdown("""
             **Legend:**
             - 🔴 Red dotted line: Total roof boundary traced
-            - 🟩 Green dotted line: Suitable area boundary
+            - 🟩 Green area: Suitable for solar panels
             """)
             
             # Area breakdown
