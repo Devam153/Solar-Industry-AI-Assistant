@@ -4,7 +4,6 @@ Interactive drawing component to show detected roof area on satellite image
 """
 
 import streamlit as st
-import numpy as np
 from PIL import Image, ImageDraw
 import io
 import json
@@ -119,7 +118,7 @@ class RoofVisualizer:
         """
         # Create a copy for drawing
         overlay = image.copy().convert("RGBA")
-        draw = ImageDraw.Draw(overlay)
+        draw = ImageDraw.Draw(overlay) # A copy of the original satellite image, with extra visuals
         
         
         # Extract boundary coordinates
