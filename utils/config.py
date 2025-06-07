@@ -17,14 +17,14 @@ class SolarConfig:
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     
     # Image Settings
-    DEFAULT_ZOOM_LEVEL = 21  # Much higher zoom for single building focus
-    DEFAULT_IMAGE_SIZE = "640x640"
-    MAX_IMAGE_SIZE = "640x640"  # Free tier limit
+    DEFAULT_ZOOM_LEVEL = 21  # much higher zoom for single building focus
+    DEFAULT_IMAGE_SIZE = "640x640" #free tier limit
+    MAX_IMAGE_SIZE = "640x640"  #free tier limit
     IMAGE_FORMAT = "png"
     
-    # Solar Panel Specifications (Indian standards)
-    STANDARD_PANEL_WATTAGE = 330  # Watts (common in India)
-    STANDARD_PANEL_SIZE_SQFT = 16  # Square feet (smaller for Indian panels)
+    # Solar Panel Specifications(indian standards)
+    STANDARD_PANEL_WATTAGE = 330  # Watts in India)
+    STANDARD_PANEL_SIZE_SQFT = 20  # Square feet (smaller for Indian panels)
     PANEL_EFFICIENCY = 0.20  # 20% efficiency
     
     # System Performance (Indian conditions)
