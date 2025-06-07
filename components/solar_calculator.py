@@ -1,6 +1,6 @@
 """
 Solar Calculator with Gemini AI optimization for Indian market
-Enhanced calculations with AI-powered regional optimization
+regional optimization
 """
 
 import google.generativeai as genai
@@ -73,7 +73,6 @@ class SolarCalculator:
             }
             
         except Exception as e:
-            # Fallback to basic calculation
             return self._basic_calculation(panel_count, latitude)
     
     def _get_ai_optimized_parameters(self, latitude, panel_count, location_data):

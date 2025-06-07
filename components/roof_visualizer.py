@@ -18,7 +18,7 @@ class RoofVisualizer:
     def __init__(self):
         self.outline_color = (255, 0, 0, 255)  # Red outline
         self.suitable_color = (0, 255, 0, 180)  # Green fill
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
     
     def get_ai_roof_boundaries(self, image, suitable_area_sqft, total_area_sqft):
         """
@@ -27,18 +27,18 @@ class RoofVisualizer:
         prompt = f"""
         Analyze this satellite/aerial image and trace the EXACT roof boundaries of the main building.
         
-        I need you to provide detailed coordinate points that trace the PERIMETER of the roof edges.
+        I need you to provide detailed coordinate points that trace the perimeter of the roof edges.
         Don't give me rectangles - I need the actual roof outline following the building's shape.
         
         For the building in this image:
         - Total roof area: {total_area_sqft:.0f} sq ft
         - Suitable solar area: {suitable_area_sqft:.0f} sq ft
         
-        Please provide:
+        provide:
         1. "roof_outline": Array of [x,y] coordinates that trace the outer roof perimeter
         2. "suitable_outline": Array of [x,y] coordinates for the inner suitable area (avoiding obstacles like HVAC, chimneys, edges)
         
-        Make the coordinates follow the ACTUAL roof shape visible in the image.
+        Make the coordinates follow the actual roof shape visible in the image.
         Use many coordinate points (10-20 points minimum) to create smooth, accurate outlines.
         
         Return in this JSON format:
@@ -121,32 +121,32 @@ class RoofVisualizer:
         overlay = image.copy().convert("RGBA")
         draw = ImageDraw.Draw(overlay)
         
-        try:
-            # Extract boundary coordinates
-            roof_outline = ai_boundaries.get('roof_outline', [])
-            suitable_outline = ai_boundaries.get('suitable_outline', [])
+        
+        # Extract boundary coordinates
+        roof_outline = ai_boundaries.get('roof_outline', [])
+        suitable_outline = ai_boundaries.get('suitable_outline', [])
+        
+        # Validate and clean coordinates
+        roof_points = self._validate_coordinates(roof_outline, image.width, image.height)
+        suitable_points = self._validate_coordinates(suitable_outline, image.width, image.height)
+        
+        # Draw total roof outline (red dotted line)
+        if len(roof_points) >= 3:
+            self._draw_dotted_outline(draw, roof_points, (255, 0, 0, 255), width=3)
+        
+        # Draw suitable area (green fill with outline)
+        if len(suitable_points) >= 3:
+            # Fill suitable area
+            draw.polygon(suitable_points, fill=(0, 255, 0, 60), outline=None)
+            # Outline suitable area
+            self._draw_dotted_outline(draw, suitable_points, (0, 255, 0, 255), width=2)
+        
+        # Add text labels
+        self._add_text_labels(draw, suitable_area, total_area, "AI-Traced")
             
-            # Validate and clean coordinates
-            roof_points = self._validate_coordinates(roof_outline, image.width, image.height)
-            suitable_points = self._validate_coordinates(suitable_outline, image.width, image.height)
-            
-            # Draw total roof outline (red dotted line)
-            if len(roof_points) >= 3:
-                self._draw_dotted_outline(draw, roof_points, (255, 0, 0, 255), width=3)
-            
-            # Draw suitable area (green fill with outline)
-            if len(suitable_points) >= 3:
-                # Fill suitable area
-                draw.polygon(suitable_points, fill=(0, 255, 0, 60), outline=None)
-                # Outline suitable area
-                self._draw_dotted_outline(draw, suitable_points, (0, 255, 0, 255), width=2)
-            
-            # Add text labels
-            self._add_text_labels(draw, suitable_area, total_area, "AI-Traced")
-            
-        except Exception as e:
+        '''except Exception as e:
             print(f"Error drawing traced boundaries: {str(e)}")
-            return self._draw_simple_outline(image, suitable_area, total_area)
+            return self._draw_simple_outline(image, suitable_area, total_area)'''
         
         return overlay
     
@@ -206,7 +206,7 @@ class RoofVisualizer:
                 valid_points.append((x, y))
         return valid_points
     
-    def _draw_simple_outline(self, image, suitable_area, total_area):
+    '''def _draw_simple_outline(self, image, suitable_area, total_area):
         """
         Fallback outline when AI detection fails
         """
@@ -253,13 +253,12 @@ class RoofVisualizer:
         # Add text labels
         self._add_text_labels(draw, suitable_area, total_area, "Estimated")
         
-        return overlay
+        return overlay'''
     
     def _add_text_labels(self, draw, suitable_area, total_area, detection_method="AI-Traced"):
         """
         Add text labels with background
         """
-        # Background for text
         draw.rectangle([5, 5, 320, 70], fill=(0, 0, 0, 180))
         draw.text((10, 10), f"Total Roof: {total_area:.0f} sq ft", fill=(255, 255, 255, 255))
         draw.text((10, 30), f"Suitable: {suitable_area:.0f} sq ft", fill=(255, 255, 255, 255))
