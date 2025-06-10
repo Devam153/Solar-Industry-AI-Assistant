@@ -54,10 +54,9 @@ class RoofAnalyzer:
         
         response = self.model.generate_content([prompt, image])
         
-        # Extract JSON from response
+        #JSON 
         response_text = response.text
         
-        # Find JSON in the response
         start_idx = response_text.find('{')
         end_idx = response_text.rfind('}') + 1
         
@@ -126,7 +125,7 @@ class RoofAnalyzer:
             return 0
         
         # Account for spacing between panels and installation constraints
-        usable_area = suitable_area * 0.60  # 60% utilization factor
+        usable_area = suitable_area * 0.6  # 60% utilization factor
         panel_count = int(usable_area / panel_size)
         
         # Cap at reasonable Indian residential limits for single building (5-20 panels)

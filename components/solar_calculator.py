@@ -104,18 +104,15 @@ class SolarCalculator:
             
             Be realistic for Indian conditions - account for dust, heat, monsoon, and regional variations.
             """
-            
             response = self.model.generate_content(prompt)
             response_text = response.text
-            
-            # Extract JSON
             start_idx = response_text.find('{')
             end_idx = response_text.rfind('}') + 1
             
             if start_idx != -1 and end_idx != 0:
                 json_str = response_text[start_idx:end_idx]
                 return json.loads(json_str)
-            
+        
         except Exception as e:
             print(f"AI optimization failed: {str(e)}")
         
@@ -130,7 +127,6 @@ class SolarCalculator:
         }
     
     def _basic_calculation(self, panel_count, latitude):
-        """Fallback basic calculation without AI optimization"""
         system_size_kw = panel_count * config.STANDARD_PANEL_WATTAGE / 1000
         daily_sun_hours = config.get_regional_sun_hours(latitude)
         

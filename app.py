@@ -133,7 +133,7 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Check API silently
+    # Check API 
     validation = validate_environment()
     if validation['status'] != 'ready':
         st.error("⚠️ Please configure your Google Maps API key in the .env file")
@@ -143,7 +143,7 @@ def main():
     with st.container():
         st.markdown('<div class="input-container">', unsafe_allow_html=True)
         
-        col1, col2 = st.columns([2, 1])
+        col1, col2 = st.columns([2, 1]) # 2 parts of space, 1 part of space
         
         with col1:
             st.markdown('<div class="section-title">Location</div>', unsafe_allow_html=True)

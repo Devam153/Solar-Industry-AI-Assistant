@@ -24,7 +24,7 @@ class SolarConfig:
     
     # Solar Panel Specifications(indian standards)
     STANDARD_PANEL_WATTAGE = 330  # Watts in India)
-    STANDARD_PANEL_SIZE_SQFT = 20  # Square feet (smaller for Indian panels)
+    STANDARD_PANEL_SIZE_SQFT = 20  #sqft
     PANEL_EFFICIENCY = 0.20  # 20% efficiency
     
     # System Performance (Indian conditions)
@@ -37,8 +37,8 @@ class SolarConfig:
     COST_PER_WATT_INSTALLED = 45  # ₹/W (Indian market rate)
     CENTRAL_SUBSIDY = 0.40  # 40% central + state subsidies
     ANNUAL_DEGRADATION = 0.005  # 0.5% per year
-    SYSTEM_LIFETIME = 25  # Years
-    CURRENCY_SYMBOL = "₹"  # Indian Rupee symbol
+    SYSTEM_LIFETIME = 25  # years
+    CURRENCY_SYMBOL = "₹" 
     CURRENCY_CODE = "INR"
     
     # Regional Solar Data (India specific)

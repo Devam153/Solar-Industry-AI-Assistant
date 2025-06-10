@@ -102,24 +102,24 @@ class SolarReportGenerator:
         annual_savings = report['financial_analysis']['annual_savings']
         
         summary = f"""
-🏠 **Solar Analysis Summary for {location}**
+            🏠 **Solar Analysis Summary for {location}**
 
-📏 **Roof Analysis:**
-• Suitable roof area: {roof_area:,.0f} sq ft
-• Estimated solar panels: {panel_count} panels
-• Solar potential rating: {report['roof_analysis']['confidence_score']*100:.0f}%
+            📏 **Roof Analysis:**
+            • Suitable roof area: {roof_area:,.0f} sq ft
+            • Estimated solar panels: {panel_count} panels
+            • Solar potential rating: {report['roof_analysis']['confidence_score']*100:.0f}%
 
-⚡ **Energy Production:**
-• Annual generation: {annual_generation:,.0f} kWh
-• Monthly average: {report['solar_potential']['monthly_average']:,.0f} kWh
-• System size: {report['solar_potential']['system_size']:.1f} kW
+            ⚡ **Energy Production:**
+            • Annual generation: {annual_generation:,.0f} kWh
+            • Monthly average: {report['solar_potential']['monthly_average']:,.0f} kWh
+            • System size: {report['solar_potential']['system_size']:.1f} kW
 
-💰 **Financial Analysis:**
-• Estimated system cost: ${report['financial_analysis']['estimated_cost']:,.0f}
-• Annual savings: ${annual_savings:,.0f}
-• Payback period: {report['financial_analysis']['payback_period']:.1f} years
+            💰 **Financial Analysis:**
+            • Estimated system cost: ${report['financial_analysis']['estimated_cost']:,.0f}
+            • Annual savings: ${annual_savings:,.0f}
+            • Payback period: {report['financial_analysis']['payback_period']:.1f} years
 
-🎯 **Recommendation:** {report['recommendation']}
+            🎯 **Recommendation:** {report['recommendation']}
         """
         
         return summary.strip()
