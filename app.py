@@ -16,7 +16,7 @@ load_dotenv()
 
 # Page configuration
 st.set_page_config(
-    page_title="Solar Analysis",
+    page_title="SolarScope",
     page_icon="☀️",
     layout="wide",
     initial_sidebar_state="collapsed"
