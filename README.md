@@ -1,8 +1,8 @@
 # Solar Analysis Tool
 
-access the website: https://solar-analysis-ai-assistant.streamlit.app
+access the website: https://solarscope.streamlit.app
 
-A comprehensive AI-powered solar potential analysis application that evaluates rooftop solar installation feasibility using satellite imagery and advanced calculations.
+An AI-powered solar potential analysis application that evaluates rooftop solar installation feasibility using satellite imagery and advanced calculations.
 
 ## Features
 
@@ -20,27 +20,7 @@ A comprehensive AI-powered solar potential analysis application that evaluates r
 - **AI Analysis**: Computer Vision algorithms
 - **APIs**: Google Maps Static API, Google Geocoding API
 
-## Setup
-
-1. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-2. Set up environment variables:
-
-```bash
-GOOGLE_MAPS_API_KEY=your_api_key_here
-```
-
-3. Run the application:
-
-```bash
-streamlit run app.py
-```
-
-## Code Workflow
+## Workflow
 
 When a user enters an address, the application follows this workflow:
 
