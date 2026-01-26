@@ -1,12 +1,9 @@
 import requests
 import os
-from dotenv import load_dotenv
 import io
 from PIL import Image
 import base64
 
-# Load environment variables
-load_dotenv()
 
 def fetch_satellite_image(lat, lng, zoom=21, size="640x640", image_format="png"):
     """

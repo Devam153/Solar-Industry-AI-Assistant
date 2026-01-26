@@ -4,10 +4,6 @@ Centralized settings and constants
 """
 
 import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 class SolarConfig:
     """Configuration class for solar analysis settings"""

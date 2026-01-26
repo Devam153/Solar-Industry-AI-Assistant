@@ -11,8 +11,6 @@ from utils.config import config, validate_environment
 import time
 import json
 
-# Load environment variables
-load_dotenv()
 
 # Page configuration
 st.set_page_config(

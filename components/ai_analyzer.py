@@ -13,11 +13,16 @@ genai.configure(api_key=config.GEMINI_API_KEY)
 
 class RoofAnalyzer:
     def __init__(self):
+        if not config.GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY is not configured")
+
+        genai.configure(api_key=config.GEMINI_API_KEY)
+        self.model = genai.GenerativeModel("gemini-2.0-flash")
+
         self.roof_detected = False
         self.roof_area = 0
         self.suitable_area = 0
         self.obstacles = []
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
         
     def perform_gemini_roof_analysis(self, image):
         """
