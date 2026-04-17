@@ -1,4 +1,4 @@
-# Solar Analysis Tool
+# SolarScope - Solar Industry AI Assistant
 
 access the website: https://solarscope.streamlit.app
 
