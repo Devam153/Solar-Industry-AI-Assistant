@@ -2,6 +2,7 @@
 Roof Area Visualizer
 Interactive drawing component to show detected roof area on satellite image
 """
+# will make it better
 
 import streamlit as st
 from PIL import Image, ImageDraw
