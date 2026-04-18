@@ -6,3 +6,11 @@ opencv-python-headless
 Pillow
 numpy
 matplotlib
+pandas
+pvlib
+shapely
+scipy
+torch --index-url https://download.pytorch.org/whl/cpu
+torchvision --index-url https://download.pytorch.org/whl/cpu
+timm
+git+https://github.com/ChaoningZhang/MobileSAM.git

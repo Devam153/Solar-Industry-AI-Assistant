@@ -108,3 +108,10 @@ def peak_sun_hours(df: pd.DataFrame) -> float:
     """Average daily peak-sun-hours (kWh/m^2/day equivalent)."""
     return annual_ghi_kwh_per_m2(df) / 365.0
 
+if __name__ == "__main__":
+    # Smoke test: Mumbai
+    df = fetch_hourly_weather(19.0760, 72.8777)
+    print(f"Rows: {len(df)}")
+    print(f"Annual GHI: {annual_ghi_kwh_per_m2(df):.0f} kWh/m^2")
+    print(f"Avg peak sun hours: {peak_sun_hours(df):.2f} h/day")
+    print(df.head(3))
