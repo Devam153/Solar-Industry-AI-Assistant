@@ -26,7 +26,7 @@ POWER_ENDPOINT = "https://power.larc.nasa.gov/api/temporal/hourly/point"
 CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".cache", "nasa_power")
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-DEFAULT_TMY_YEAR = 2022
+DEFAULT_TMY_YEAR = 2025
 
 PARAMETERS = [
     "ALLSKY_SFC_SW_DWN",
@@ -90,6 +90,11 @@ def fetch_hourly_weather(lat: float, lng: float, year: int = DEFAULT_TMY_YEAR) -
         },
         index=index,
     )
+    ist = df.index.tz_convert("Asia/Kolkata")
+    df["IST-time"] = [
+        f"{(t.hour % 12) or 12}:{t.minute:02d}{'am' if t.hour < 12 else 'pm'}"
+        for t in ist
+    ]
 
     # NASA POWER encodes missing as -999; clip to non-negative for irradiance
     df = df.replace(-999, pd.NA).dropna()
@@ -114,4 +119,5 @@ if __name__ == "__main__":
     print(f"Rows: {len(df)}")
     print(f"Annual GHI: {annual_ghi_kwh_per_m2(df):.0f} kWh/m^2")
     print(f"Avg peak sun hours: {peak_sun_hours(df):.2f} h/day")
-    print(df.head(3))
+    print(df.head(25))
+
