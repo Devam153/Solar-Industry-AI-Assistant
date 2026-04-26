@@ -25,6 +25,7 @@ import os
 import sys
 import urllib.request
 
+import cv2
 import numpy as np
 from PIL import Image
 
@@ -156,6 +157,69 @@ def _pick_best_mask(
     return mask, score
 
 
+# ---- shadow removal --------------------------------------------------------
+def _remove_shadow(
+    image_rgb: np.ndarray,
+    mask: np.ndarray,
+    prompt_point: tuple[int, int],
+    brightness_ratio: float = 0.65,
+    sample_radius: int = 25,
+    open_kernel: int = 7,
+) -> np.ndarray:
+    """
+    Strip building-shadow regions out of a SAM mask.
+
+    Why we need this: SAM treats a building and its cast shadow as one
+    connected "object" because the shadow is dark, attached to the building,
+    and visually similar to neighboring shaded ground. We use the prompt
+    point's local brightness as the reference for "what a roof looks like"
+    and discard any masked pixel that is significantly darker.
+
+    Steps:
+      1. Sample HSV "value" channel in a small patch around the prompt point.
+      2. Compute reference brightness (median of patch).
+      3. Mark mask pixels below brightness_ratio * reference as shadow.
+      4. Morphological opening to break narrow shadow tails.
+      5. Keep only the connected component containing the prompt point.
+    """
+    px, py = prompt_point
+    h, w = image_rgb.shape[:2]
+
+    # 1. Reference brightness — HSV V channel is more lighting-robust than
+    #    RGB grayscale for natural images.
+    hsv = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2HSV)
+    v = hsv[..., 2]
+
+    y0 = max(0, py - sample_radius)
+    y1 = min(h, py + sample_radius)
+    x0 = max(0, px - sample_radius)
+    x1 = min(w, px + sample_radius)
+    ref_v = float(np.median(v[y0:y1, x0:x1]))
+
+    # 2. Threshold: drop pixels significantly darker than reference.
+    bright_enough = v >= (ref_v * brightness_ratio)
+    refined = mask & bright_enough
+
+    # 3. Morphological opening — removes thin shadow "tails" hanging off
+    #    the roof while preserving solid roof body.
+    refined_u8 = refined.astype(np.uint8)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (open_kernel, open_kernel))
+    refined_u8 = cv2.morphologyEx(refined_u8, cv2.MORPH_OPEN, kernel)
+
+    # 4. Keep only the connected component that contains the prompt point.
+    n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(refined_u8, connectivity=8)
+    if n_labels > 1:
+        prompt_label = int(labels[py, px])
+        if prompt_label > 0:
+            refined_u8 = (labels == prompt_label).astype(np.uint8)
+        else:
+            # Prompt point fell on a hole — keep the largest non-background blob
+            largest = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+            refined_u8 = (labels == largest).astype(np.uint8)
+
+    return refined_u8.astype(bool)
+
+
 # ---- main API --------------------------------------------------------------
 def segment_roof(
     image_bytes: bytes,
@@ -165,6 +229,8 @@ def segment_roof(
     prompt_point: tuple[int, int] | None = None,
     use_box_prompt: bool = True,
     box_fraction: float = 0.50,
+    remove_shadows: bool = True,
+    shadow_brightness_ratio: float = 0.65,
     debug: bool = False,
 ) -> dict:
     """
@@ -236,6 +302,21 @@ def segment_roof(
 
     mask, score = _pick_best_mask(masks, scores, prompt_point, (h, w))
 
+    raw_pixel_count = int(mask.sum())
+
+    if remove_shadows:
+        mask = _remove_shadow(
+            image,
+            mask,
+            prompt_point,
+            brightness_ratio=shadow_brightness_ratio,
+        )
+        if debug:
+            removed = raw_pixel_count - int(mask.sum())
+            pct = removed / max(raw_pixel_count, 1) * 100
+            print(f"[roof_segmenter] shadow removal: dropped {removed:,} px "
+                  f"({pct:.1f}% of raw mask)")
+
     pixel_count = int(mask.sum())
     area_m2, area_sqft = _pixels_to_sqft(pixel_count, lat, zoom, scale)
     m_per_px = _meters_per_pixel(lat, zoom, scale)
@@ -245,11 +326,13 @@ def segment_roof(
         "area_sqft": round(area_sqft, 1),
         "area_m2": round(area_m2, 2),
         "pixel_count": pixel_count,
+        "raw_pixel_count": raw_pixel_count,
         "m_per_pixel": round(m_per_px, 4),
         "score": round(score, 3),
         "image_shape": (h, w),
         "prompt_point": prompt_point,
         "used_box_prompt": use_box_prompt,
+        "shadow_removed": remove_shadows,
         "scale": scale,
     }
 
@@ -262,7 +345,7 @@ if __name__ == "__main__":
     )
     from utils.image_fetch import fetch_satellite_image_complete
 
-    address = "E-87, Sarita Vihar, Delhi"
+    address = "FF21-HBR, HBR layout"
     zoom = 21
     scale = 2  # 2x pixel density at zoom 21 = double the detail for SAM
 
