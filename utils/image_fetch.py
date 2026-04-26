@@ -5,43 +5,38 @@ from PIL import Image
 import base64
 
 
-def fetch_satellite_image(lat, lng, zoom=21, size="640x640", image_format="png"):
+def fetch_satellite_image(lat, lng, zoom=21, size="640x640", image_format="png", scale=1):
     """
-    Fetch high-resolution satellite image using Google Maps Static API
-    
-    Args:
-        lat (float): Latitude
-        lng (float): Longitude
-        zoom (int): Zoom level (1-21, higher = more detailed) - Default 21 for single building
-        size (str): Image size in format "widthxheight" (max 640x640 for free tier)
-        image_format (str): Image format (png, jpg, gif)
-        
-    Returns:
-        dict: Contains 'image_data', 'url', 'success' if successful, 'error' if failed
+    Fetch high-resolution satellite image using Google Maps Static API.
+
+    scale=2 doubles the pixel density at the same zoom (returns a 1280x1280
+    image for size=640x640) — gives the segmenter twice the detail to work
+    with at no extra geographic coverage cost.
     """
     api_key = os.getenv('GOOGLE_MAPS_API_KEY')
-    
+
     if not api_key:
         return {"error": "Google Maps API key not found in environment variables"}
-    
+
     # Validate coordinates
     if not (-90 <= lat <= 90 and -180 <= lng <= 180):
         return {"error": "Invalid coordinates provided"}
-    
+
     # Google Maps Static API endpoint
     base_url = "https://maps.googleapis.com/maps/api/staticmap"
-    
+
     params = {
         'center': f"{lat},{lng}",
         'zoom': zoom,
         'size': size,
+        'scale': scale,
         'maptype': 'satellite',
         'format': image_format,
         'key': api_key
     }
     
     try:
-        print(f"🛰️ Fetching satellite image for coordinates: {lat}, {lng} at zoom {zoom}")
+        print(f"🛰️ Fetching satellite image for coordinates: {lat}, {lng} at zoom {zoom} scale {scale}")
         response = requests.get(base_url, params=params)
         
         if response.status_code == 200:
@@ -92,7 +87,7 @@ def get_image_info(image_data):
     except Exception as e:
         return {"error": f"Failed to analyze image: {str(e)}"}
 
-def fetch_satellite_image_complete(address=None, lat=None, lng=None, zoom=21):
+def fetch_satellite_image_complete(address=None, lat=None, lng=None, zoom=21, scale=1):
     """
     Complete workflow: geocode address (if needed) and fetch satellite image
     Returns image data in memory without saving to disk
@@ -126,7 +121,7 @@ def fetch_satellite_image_complete(address=None, lat=None, lng=None, zoom=21):
         formatted_address = f"{lat}, {lng}"
     
     # Fetch satellite image with the specified zoom level
-    image_result = fetch_satellite_image(lat, lng, zoom=zoom)
+    image_result = fetch_satellite_image(lat, lng, zoom=zoom, scale=scale)
     
     if 'error' in image_result:
         return {"error": f"Image fetch failed: {image_result['error']}"}
