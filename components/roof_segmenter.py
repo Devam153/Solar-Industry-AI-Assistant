@@ -120,8 +120,7 @@ def _pick_best_mask(
     Heuristics:
       - must contain the prompt point (foreground)
       - prefer masks within MIN..MAX fraction of frame
-      - tiebreaker: smallest mask (residential roofs are typically the
-        SMALLEST of SAM's 3 outputs at granularity)
+      - tiebreaker: highest SAM confidence in range
     """
     h, w = image_size
     px, py = prompt_point
@@ -259,7 +258,8 @@ def segment_roof(
 
     if prompt_point is None:
         prompt_point = (w // 2, h // 2)
-    px, py = prompt_point
+    px, py = int(prompt_point[0]), int(prompt_point[1])
+    prompt_point = (px, py)
 
     predictor = _get_predictor()
     predictor.set_image(image)
@@ -275,14 +275,12 @@ def segment_roof(
         # large residential roofs without grabbing the whole frame.
         half = int(min(h, w) * box_fraction / 2)
         box = np.array(
-            [
-                [
-                    max(0, px - half),
-                    max(0, py - half),
-                    min(w, px + half),
-                    min(h, py + half),
-                ]
-            ],
+            [[
+                max(0, px - half),
+                max(0, py - half),
+                min(w, px + half),
+                min(h, py + half),
+            ]],
             dtype=np.float32,
         )
 
