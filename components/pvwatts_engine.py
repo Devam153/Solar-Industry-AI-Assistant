@@ -201,7 +201,7 @@ if __name__ == "__main__":
     )
     from components.nasa_power import fetch_hourly_weather
 
-    lat, lng = 19.0760, 72.8777
+    lat, lng = 20.34623, 77.4353
     weather = fetch_hourly_weather(lat, lng)
     result = simulate_annual_generation(
         weather=weather,
