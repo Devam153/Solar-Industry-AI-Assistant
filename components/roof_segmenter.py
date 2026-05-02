@@ -2,10 +2,10 @@
 MobileSAM-based roof segmenter.
 
 Replaces Gemini's hallucinated roof coordinates with a pixel-accurate binary
-mask from Meta's Segment Anything Model (MobileSAM variant). Converts pixel
-count to ground-area square feet using Google Web Mercator's known
-meters-per-pixel formula at the request's zoom level (with cosine correction
-for latitude).
+mask from Meta's Segment Anything Model. 
+Converts pixel count to ground-area square feet 
+using Google Web Mercator's known meters-per-pixel formula 
+at the request's zoom level (with cosine correction for latitude).
 
 Public API:
     segment_roof(image_bytes, lat, zoom=21, prompt_point=None) -> dict
@@ -19,7 +19,7 @@ Returns dict with:
     score         float (SAM confidence, 0..1)
 """
 
-import io
+import io # reads image bytes as a stream
 import math
 import os
 import sys
@@ -27,7 +27,7 @@ import urllib.request
 
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image # decodes png bytes into an array
 
 
 # ---- weights handling ------------------------------------------------------
@@ -41,12 +41,12 @@ WEIGHTS_PATH = os.path.join(WEIGHTS_DIR, "mobile_sam.pt")
 
 
 def _ensure_weights() -> str:
-    """Download MobileSAM weights on first use (~40 MB)."""
+    """Download MobileSAM weights on first use."""
     if os.path.exists(WEIGHTS_PATH):
         return WEIGHTS_PATH
 
     os.makedirs(WEIGHTS_DIR, exist_ok=True)
-    print(f"[roof_segmenter] downloading MobileSAM weights to {WEIGHTS_PATH} ...")
+    print(f"[roof_segmenter] downloading MobileSAM weights to {WEIGHTS_PATH}")
     urllib.request.urlretrieve(WEIGHTS_URL, WEIGHTS_PATH)
     print("[roof_segmenter] download complete.")
     return WEIGHTS_PATH
@@ -58,8 +58,10 @@ _PREDICTOR = None
 
 def _get_predictor():
     """Lazy-load MobileSAM and cache the predictor at module level."""
+    '''Loading SAM is slow, about 2 seconds on a cold start. We don't want to pay that cost on every segment_roof() call. So we load once and keep the loaded predictor in module-level memory.'''
+
     global _PREDICTOR
-    if _PREDICTOR is not None:
+    if _PREDICTOR is not None: # stays loaded after one time 
         return _PREDICTOR
 
     import torch
@@ -69,6 +71,7 @@ def _get_predictor():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model = sam_model_registry["vit_t"](checkpoint=weights_path)
+    # Tiny ViT-thats MobileSAM's encoder
     model.to(device=device)
     model.eval()
 
@@ -184,8 +187,7 @@ def _remove_shadow(
     px, py = prompt_point
     h, w = image_rgb.shape[:2]
 
-    # 1. Reference brightness — HSV V channel is more lighting-robust than
-    #    RGB grayscale for natural images.
+    # 1. convert to HSV
     hsv = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2HSV)
     v = hsv[..., 2]
 
@@ -219,7 +221,7 @@ def _remove_shadow(
     return refined_u8.astype(bool)
 
 
-# ---- main API --------------------------------------------------------------
+# main
 def segment_roof(
     image_bytes: bytes,
     lat: float,
@@ -256,6 +258,7 @@ def segment_roof(
     image = np.array(pil_img)
     h, w = image.shape[:2]
 
+    # default prompt poin to the center 
     if prompt_point is None:
         prompt_point = (w // 2, h // 2)
     px, py = int(prompt_point[0]), int(prompt_point[1])
