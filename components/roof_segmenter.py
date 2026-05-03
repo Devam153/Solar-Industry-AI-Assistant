@@ -159,6 +159,62 @@ def _pick_best_mask(
     return mask, score
 
 
+# ---- automatic prompt-point selection --------------------------------------
+def auto_pick_prompt_point(
+    image_bytes: bytes,
+    bright_percentile: float = 60.0,
+    min_size_frac: float = 0.005,
+    morph_kernel: int = 15,
+) -> tuple[int, int]:
+    """
+    Pick a sensible prompt pixel automatically by finding the largest bright
+    region nearest the image center.
+
+    Indian residential rooftops are usually noticeably brighter than
+    surrounding ground (concrete, beige paint, white tile). We threshold on
+    HSV value, clean noise with morphological ops, find connected
+    components, and score each by `size / (1 + distance_to_center)`. The
+    centroid of the best component is the prompt point.
+
+    Falls back to the image center if no plausible bright region is found.
+    """
+    pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image_rgb = np.array(pil_img)
+    h, w = image_rgb.shape[:2]
+    cx, cy = w // 2, h // 2
+
+    hsv = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2HSV)
+    v = hsv[..., 2]
+
+    threshold = float(np.percentile(v, bright_percentile))
+    bright = (v >= threshold).astype(np.uint8)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (morph_kernel, morph_kernel))
+    bright = cv2.morphologyEx(bright, cv2.MORPH_OPEN, kernel)
+    bright = cv2.morphologyEx(bright, cv2.MORPH_CLOSE, kernel)
+
+    n_labels, _, stats, centroids = cv2.connectedComponentsWithStats(bright, connectivity=8)
+
+    min_size_px = int(min_size_frac * h * w)
+    best_score = -1.0
+    best_xy: tuple[int, int] | None = None
+
+    for i in range(1, n_labels):  # skip background label 0
+        size = int(stats[i, cv2.CC_STAT_AREA])
+        if size < min_size_px:
+            continue
+        comp_cx, comp_cy = float(centroids[i][0]), float(centroids[i][1])
+        dist = math.hypot(comp_cx - cx, comp_cy - cy)
+        score = size / (1.0 + dist / 100.0)
+        if score > best_score:
+            best_score = score
+            best_xy = (int(round(comp_cx)), int(round(comp_cy)))
+
+    if best_xy is None:
+        return (cx, cy)
+    return best_xy
+
+
 # ---- shadow removal --------------------------------------------------------
 def _remove_shadow(
     image_rgb: np.ndarray,
