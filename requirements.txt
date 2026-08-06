@@ -1,6 +1,4 @@
-# Pinned to the versions that are known to work locally (Python 3.11).
-# Streamlit Cloud must be set to Python 3.11 — numpy 1.26 / Pillow 9.5 have no
-# wheels for 3.13 and pip will silently resolve to numpy 2.x instead.
+
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 requests==2.32.3
@@ -16,8 +14,6 @@ pvlib==0.15.0
 shapely==2.1.2
 scipy==1.10.1
 
-# The +cpu local version forces the CPU-only build from the extra index above.
-# Without it pip resolves torch from PyPI, which is the multi-GB CUDA build.
 torch==2.11.0+cpu
 torchvision==0.26.0+cpu
 timm==1.0.26
