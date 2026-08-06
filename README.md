@@ -118,7 +118,6 @@ The first time you run the app, MobileSAM weights (~40 MB) download automaticall
 Create a `.env` file:
 ```env
 GOOGLE_MAPS_API_KEY = "your_google_maps_key"
-GEMINI_API_KEY      = "your_gemini_key"   # optional — used only for fallback obstacle classification
 ```
 
 ### 4. Run
