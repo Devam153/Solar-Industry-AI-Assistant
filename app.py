@@ -342,30 +342,39 @@ def main():
 
     # ---- Step 2: if no prompt yet, show the clickable image and wait ------
     if prompt_override is None:
-        st.markdown("---")
-        st.markdown(
-            "### 👇 Click on your rooftop to start the analysis\n"
-            "*The pipeline (segmentation → shading → layout → simulation) "
-            "runs only after you mark a point on the building.*"
-        )
-        sat_pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        click = streamlit_image_coordinates(
-            sat_pil,
-            key=f"first_click_{formatted_addr}_{zoom_used}",
-            width=720,
-        )
-        st.caption(f"📍 {formatted_addr}")
-
-        if click is not None:
-            displayed_w = 720
-            actual_w = sat_pil.size[0]
-            ratio = actual_w / displayed_w
-            st.session_state.prompt_override = (
-                int(click["x"] * ratio),
-                int(click["y"] * ratio),
+        # Rendered into a placeholder so we can clear it in-place once the
+        # user clicks. Using st.rerun() here instead would abort the script
+        # run while the image-coordinates iframe is still mounted, and its
+        # trailing message lands on a torn-down session ("Bad message format
+        # / Tried to use SessionInfo before it was initialized").
+        slot = st.empty()
+        with slot.container():
+            st.markdown("---")
+            st.markdown(
+                "### 👇 Click on your rooftop to start the analysis\n"
+                "*The pipeline (segmentation → shading → layout → simulation) "
+                "runs only after you mark a point on the building.*"
             )
-            st.rerun()
-        return  # nothing else to render until they click
+            sat_pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            click = streamlit_image_coordinates(
+                sat_pil,
+                key=f"first_click_{formatted_addr}_{zoom_used}",
+                width=720,
+            )
+            st.caption(f"📍 {formatted_addr}")
+
+        if click is None:
+            return  # nothing else to render until they click
+
+        displayed_w = 720
+        actual_w = sat_pil.size[0]
+        ratio = actual_w / displayed_w
+        prompt_override = (
+            int(click["x"] * ratio),
+            int(click["y"] * ratio),
+        )
+        st.session_state.prompt_override = prompt_override
+        slot.empty()  # drop the click-to-start block; results render below
 
     # ---- Step 3: full pipeline at the user's chosen prompt -----------------
     with st.spinner("Running analysis at your point (segment → shade → layout → simulate)..."):
