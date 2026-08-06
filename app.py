@@ -204,7 +204,7 @@ def _annotated_satellite(image_bytes: bytes, prompt_point: tuple[int, int]) -> I
 
 
 # ---- caching ---------------------------------------------------------------
-@st.cache_data(show_spinner=False, ttl=3600)
+@st.cache_data(show_spinner=False, ttl=3600, max_entries=8)
 def _cached_fetch_image(address, lat, lng, zoom, scale):
     """Fetch the satellite image only - no segmentation. Cheap; cached."""
     from utils.image_fetch import fetch_satellite_image_complete
@@ -213,7 +213,7 @@ def _cached_fetch_image(address, lat, lng, zoom, scale):
     )
 
 
-@st.cache_data(show_spinner=False, ttl=3600)
+@st.cache_data(show_spinner=False, ttl=3600, max_entries=3)
 def _cached_run(address, lat, lng, zoom, scale, prompt_point):
     """Run the FULL pipeline (segment+shade+layout+PVWatts) at a given
     user-picked prompt. Cached by inputs so clicking elsewhere is the
