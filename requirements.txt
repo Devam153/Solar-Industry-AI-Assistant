@@ -1,16 +1,25 @@
-requests
-python-dotenv
+# Pinned to the versions that are known to work locally (Python 3.11).
+# Streamlit Cloud must be set to Python 3.11 — numpy 1.26 / Pillow 9.5 have no
+# wheels for 3.13 and pip will silently resolve to numpy 2.x instead.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+requests==2.32.3
+python-dotenv==1.0.0
 streamlit==1.44.1
 streamlit-image-coordinates==0.4.0
-opencv-python-headless
-Pillow
-numpy
-matplotlib
-pandas
-pvlib
-shapely
-scipy
-torch --index-url https://download.pytorch.org/whl/cpu
-torchvision --index-url https://download.pytorch.org/whl/cpu
-timm
+opencv-python-headless==4.7.0.72
+Pillow==9.5.0
+numpy==1.26.4
+matplotlib==3.7.1
+pandas==2.1.1
+pvlib==0.15.0
+shapely==2.1.2
+scipy==1.10.1
+
+# The +cpu local version forces the CPU-only build from the extra index above.
+# Without it pip resolves torch from PyPI, which is the multi-GB CUDA build.
+torch==2.11.0+cpu
+torchvision==0.26.0+cpu
+timm==1.0.26
+
 git+https://github.com/ChaoningZhang/MobileSAM.git
